@@ -40,6 +40,8 @@ define(['module', 'knockout', 'ko-grid', cellNavigation], function (module, ko, 
         ],
         PRE_ACTIVATION_END_INDEX = PASS_THROUGH_KEY_RANGES.length - 1;
 
+    var NO_SUBSCRIPTION = {dispose: () => {}};
+
     koGrid.defineExtension(extensionId, {
         dependencies: [cellNavigation],
         Constructor: function EditingExtension(bindingValue, config, grid) {
@@ -51,7 +53,7 @@ define(['module', 'knockout', 'ko-grid', cellNavigation], function (module, ko, 
                 editorContainer = null,
                 editor = null,
                 activated = false,
-                keyDownSubscription = {dispose: () => {}};
+                keyDownSubscription = NO_SUBSCRIPTION;
 
             grid.data.onCellDoubleClick(()=> {
                 if (editor) {
@@ -62,6 +64,11 @@ define(['module', 'knockout', 'ko-grid', cellNavigation], function (module, ko, 
 
             grid.extensions[cellNavigation].onCellFocused((row, column, binding) => {
                 keyDownSubscription.dispose();
+                keyDownSubscription = NO_SUBSCRIPTION;
+
+                var rawEditor = createEditor(row, column);
+                if (!rawEditor)
+                    return;
 
                 editorContainer = window.document.createElement('div');
                 editorContainer.style.position = 'absolute';
@@ -72,7 +79,6 @@ define(['module', 'knockout', 'ko-grid', cellNavigation], function (module, ko, 
                 editorContainer.style.width = HIDDEN_WIDTH;
                 editorContainer.style.overflow = 'hidden';
 
-                var rawEditor = createEditor(row, column);
                 editor = new EditorWrapper(rawEditor);
 
                 var editorElement = editor.element;

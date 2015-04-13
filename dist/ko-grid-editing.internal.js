@@ -44,6 +44,10 @@ ko_grid_editing_editing = function (module, ko, koGrid) {
         KEY_CODE_F2
       ]
     ], PRE_ACTIVATION_END_INDEX = PASS_THROUGH_KEY_RANGES.length - 1;
+  var NO_SUBSCRIPTION = {
+    dispose: function () {
+    }
+  };
   koGrid.defineExtension(extensionId, {
     dependencies: [cellNavigation],
     Constructor: function EditingExtension(bindingValue, config, grid) {
@@ -52,10 +56,7 @@ ko_grid_editing_editing = function (module, ko, koGrid) {
         }, saveChange = bindingValue['saveChange'] || config['saveChange'] || function () {
           return window.console.warn('No `saveChange` strategy provided.');
         };
-      var editingRow = null, editingColumn = null, editorContainer = null, editor = null, activated = false, keyDownSubscription = {
-          dispose: function () {
-          }
-        };
+      var editingRow = null, editingColumn = null, editorContainer = null, editor = null, activated = false, keyDownSubscription = NO_SUBSCRIPTION;
       grid.data.onCellDoubleClick(function () {
         if (editor) {
           activate();
@@ -64,6 +65,10 @@ ko_grid_editing_editing = function (module, ko, koGrid) {
       });
       grid.extensions[cellNavigation].onCellFocused(function (row, column, binding) {
         keyDownSubscription.dispose();
+        keyDownSubscription = NO_SUBSCRIPTION;
+        var rawEditor = createEditor(row, column);
+        if (!rawEditor)
+          return;
         editorContainer = window.document.createElement('div');
         editorContainer.style.position = 'absolute';
         editorContainer.style.top = HIDDEN_TOP;
@@ -72,7 +77,6 @@ ko_grid_editing_editing = function (module, ko, koGrid) {
         editorContainer.style.bottom = HIDDEN_BOTTOM;
         editorContainer.style.width = HIDDEN_WIDTH;
         editorContainer.style.overflow = 'hidden';
-        var rawEditor = createEditor(row, column);
         editor = new EditorWrapper(rawEditor);
         var editorElement = editor.element;
         editorContainer.appendChild(editorElement);
